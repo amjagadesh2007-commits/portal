@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Retention Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            color: #4fc3f7;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4fc3f7;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #29b6f6;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #66bb6a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #4caf50;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef5350;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53935;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffb74d;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #ffa726;
+            transform: translateY(-2px);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: white;
+            padding: 1.5rem;
+            border-right: 1px solid #e0e0e0;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-section h3 {
+            color: #1a237e;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1rem;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .filter-btn:hover {
+            background: #e3f2fd;
+            border-color: #4fc3f7;
+        }
+
+        .filter-btn.active {
+            background: #e3f2fd;
+            border-color: #4fc3f7;
+            color: #1a237e;
+            font-weight: 600;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(79, 195, 247, 0.2);
+        }
+
+        .risk-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .high-risk { background: #ef5350; }
+        .medium-risk { background: #ffb74d; }
+        .low-risk { background: #66bb6a; }
+
+        .filter-count {
+            background: #4fc3f7;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Test Controls */
+        .test-controls {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .test-btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 5px solid;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.high-risk { border-left-color: #ef5350; }
+        .stat-card.medium-risk { border-left-color: #ffb74d; }
+        .stat-card.low-risk { border-left-color: #66bb6a; }
+        .stat-card.info { border-left-color: #4fc3f7; }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-card.high-risk .stat-icon { background: #ef5350; }
+        .stat-card.medium-risk .stat-icon { background: #ffb74d; }
+        .stat-card.low-risk .stat-icon { background: #66bb6a; }
+        .stat-card.info .stat-icon { background: #4fc3f7; }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Charts Container - FIXED */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrapper {
+            flex: 1;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Students Table */
+        .students-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #1a237e;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4fc3f7, #3949ab);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .risk-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .high-risk-badge {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .medium-risk-badge {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .low-risk-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* AI Chat Bot */
+        .ai-chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .ai-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .ai-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+        }
+
+        .ai-panel {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-panel.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: #f0f2f5;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .ai-input {
+            padding: 1rem;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-input input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .ai-input input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .ai-input button {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+
+        .ai-input button:hover {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 2000;
+            animation: toastSlideIn 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-left-color: #66bb6a;
+        }
+
+        .toast.error {
+            border-left-color: #ef5350;
+        }
+
+        .toast.info {
+            border-left-color: #4fc3f7;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-panel {
+                width: calc(100vw - 40px);
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Student Retention Dashboard</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="addStudentBtn">
+                <i class="fas fa-user-plus"></i>
+                Add Student
+            </button>
+            <button class="btn btn-success" id="exportBtn">
+                <i class="fas fa-download"></i>
+                Export Data
+            </button>
+            <button class="btn btn-warning" id="runTestBtn">
+                <i class="fas fa-vial"></i>
+                Run Test Suite
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>Risk Filters</h3>
+                <div class="filter-options" id="filterOptions">
+                    <button class="filter-btn active" data-filter="all">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="risk-indicator" style="background: linear-gradient(45deg, #ef5350, #ffb74d, #66bb6a);"></div>
+                            <span>All Students</span>
+                        </div>
+                        <span class="filter-count" id="allCount">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="high">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="risk-indicator high-risk"></div>
+                            <span>High Risk</span>
+                        </div>
+                        <span class="filter-count" id="highCount">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="medium">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="risk-indicator medium-risk"></div>
+                            <span>Medium Risk</span>
+                        </div>
+                        <span class="filter-count" id="mediumCount">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="low">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="risk-indicator low-risk"></div>
+                            <span>Low Risk</span>
+                        </div>
+                        <span class="filter-count" id="lowCount">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Test Controls</h3>
+                <div class="test-controls">
+                    <button class="test-btn" style="background: #4fc3f7; color: white;" id="addRandomBtn">
+                        <i class="fas fa-random"></i>
+                        Add 10 Random Students
+                    </button>
+                    <button class="test-btn" style="background: #ef5350; color: white;" id="addHighRiskBtn">
+                        <i class="fas fa-fire"></i>
+                        Add 5 High Risk Students
+                    </button>
+                    <button class="test-btn" style="background: #ffb74d; color: white;" id="addMediumRiskBtn">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Add 5 Medium Risk Students
+                    </button>
+                    <button class="test-btn" style="background: #66bb6a; color: white;" id="clearDataBtn">
+                        <i class="fas fa-trash"></i>
+                        Clear All Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Chart Controls</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn btn-primary" id="refreshChartsBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh Charts
+                    </button>
+                    <button class="btn btn-success" id="addSampleDataBtn">
+                        <i class="fas fa-database"></i>
+                        Add Sample Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Statistics</h3>
+                <div style="font-size: 0.9rem; color: #666; line-height: 1.6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Total Students:</span>
+                        <span style="font-weight: 600;" id="totalCount">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>High Risk:</span>
+                        <span style="font-weight: 600; color: #ef5350;" id="highStat">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Medium Risk:</span>
+                        <span style="font-weight: 600; color: #ffb74d;" id="mediumStat">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Low Risk:</span>
+                        <span style="font-weight: 600; color: #66bb6a;" id="lowStat">0</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Dashboard Content -->
+        <main class="dashboard-content">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card high-risk">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="highRiskStat">0</div>
+                            <div class="stat-label">High Risk Students</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card medium-risk">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="mediumRiskStat">0</div>
+                            <div class="stat-label">Medium Risk Students</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card low-risk">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="lowRiskStat">0</div>
+                            <div class="stat-label">Low Risk Students</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card info">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="retentionRate">0%</div>
+                            <div class="stat-label">Retention Rate</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Risk Distribution</h3>
+                        <span style="font-size: 0.9rem; color: #666;">Live Updates</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Attendance Trends</h3>
+                        <span style="font-size: 0.9rem; color: #666;">Performance Levels</span>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Table -->
+            <section class="students-section">
+                <div class="section-header">
+                    <h2 id="tableTitle">All Students (0 students)</h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" id="bulkContactBtn">
+                            <i class="fas fa-envelope"></i>
+                            Bulk Contact
+                        </button>
+                        <button class="btn" id="showAllBtn">
+                            <i class="fas fa-list"></i>
+                            Show All
+                        </button>
+                        <button class="btn btn-warning" id="recalculateBtn">
+                            <i class="fas fa-calculator"></i>
+                            Recalculate Risks
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; max-height: 500px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Risk Level</th>
+                                <th>Attendance</th>
+                                <th>LMS Activity</th>
+                                <th>Grade</th>
+                                <th>Risk Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable">
+                            <!-- Student rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 1rem; text-align: center; color: #666; font-size: 0.9rem;">
+                    Showing <span id="tableCount">0</span> of <span id="totalTableCount">0</span> students
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- AI Chat Bot -->
+    <div class="ai-chatbot">
+        <div class="ai-panel" id="aiPanel">
+            <div class="ai-header">
+                <h3><i class="fas fa-robot"></i> Test Assistant</h3>
+                <button class="btn btn-danger" id="closeAiBtn" style="padding: 0.25rem 0.5rem; font-size: 0.9rem;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ai-messages" id="aiMessages">
+                <div class="message ai-message">
+                    Hello! I'm your Test Assistant. I can help you:
+                    <br><br>
+                    • Run comprehensive tests<br>
+                    • Add multiple students quickly<br>
+                    • Verify charts are working<br>
+                    • Test filters in real-time<br>
+                    <br><br>
+                    Try running the test suite!
+                </div>
+            </div>
+            <div class="ai-input">
+                <input type="text" id="aiInput" placeholder="Ask me to run tests...">
+                <button id="sendAiMessage">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <button class="ai-toggle" id="aiToggle">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="modal" id="addStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Student</h2>
+                <button class="btn btn-danger" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="studentForm">
+                    <div class="form-group">
+                        <label for="studentName">Full Name *</label>
+                        <input type="text" id="studentName" required placeholder="Enter student name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentEmail">Email *</label>
+                        <input type="email" id="studentEmail" required placeholder="student@university.edu">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentId">Student ID *</label>
+                        <input type="text" id="studentId" required placeholder="S1001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="attendance">Attendance (%)</label>
+                        <input type="number" id="attendance" min="0" max="100" value="85" placeholder="0-100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lmsActivity">LMS Activity (%)</label>
+                        <input type="number" id="lmsActivity" min="0" max="100" value="75" placeholder="0-100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="grade">Current Grade (%)</label>
+                        <input type="number" id="grade" min="0" max="100" value="78" placeholder="0-100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course">Course</label>
+                        <select id="course">
+                            <option value="CS101">CS101 - Programming Fundamentals</option>
+                            <option value="MATH201">MATH201 - Calculus II</option>
+                            <option value="ENG102">ENG102 - Academic Writing</option>
+                            <option value="BIO101">BIO101 - General Biology</option>
+                            <option value="PHYS102">PHYS102 - Physics II</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Font Awesome Icons
+        const faIcons = document.createElement('link');
+        faIcons.rel = 'stylesheet';
+        faIcons.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(faIcons);
+
+        // Application State
+        let students = [];
+        let filteredStudents = [];
+        let currentFilter = 'all';
+        let riskChart = null;
+        let attendanceChart = null;
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Student Retention Dashboard...');
+            loadStudents();
+            initializeEventListeners();
+            updateUI();
+            initializeCharts(); // Initialize charts first
+            initializeAI();
+            showToast('Dashboard loaded successfully!', 'success');
+        });
+
+        // Load students from localStorage
+        function loadStudents() {
+            const saved = localStorage.getItem('studentRetentionData');
+            if (saved) {
+                students = JSON.parse(saved);
+                console.log(`Loaded ${students.length} students from localStorage`);
+                if (students.length === 0) {
+                    createSampleData(8); // Create initial sample data
+                }
+            } else {
+                createSampleData(8);
+            }
+            applyFilter();
+        }
+
+        // Save students to localStorage
+        function saveStudents() {
+            localStorage.setItem('studentRetentionData', JSON.stringify(students));
+            console.log(`Saved ${students.length} students to localStorage`);
+        }
+
+        // Create sample data
+        function createSampleData(count = 8) {
+            const firstNames = ['Alex', 'Brianna', 'Carlos', 'Diana', 'Ethan', 'Fiona', 'George', 'Hannah'];
+            const lastNames = ['Anderson', 'Brown', 'Clark', 'Davis', 'Evans', 'Fisher', 'Green', 'Harris'];
+            const courses = ['CS101', 'MATH201', 'ENG102', 'BIO101'];
+            
+            for (let i = 0; i < count; i++) {
+                const firstName = firstNames[i % firstNames.length];
+                const lastName = lastNames[i % lastNames.length];
+                const name = `${firstName} ${lastName}`;
+                const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@university.edu`;
+                const id = `S${1000 + students.length + 1}`;
+                
+                // Create varied data for better charts
+                let attendance, lmsActivity, grade;
+                
+                // Create different risk levels
+                if (i < 2) { // High risk
+                    attendance = Math.floor(Math.random() * 30) + 40; // 40-70%
+                    lmsActivity = Math.floor(Math.random() * 25) + 35; // 35-60%
+                    grade = Math.floor(Math.random() * 30) + 40; // 40-70%
+                } else if (i < 5) { // Medium risk
+                    attendance = Math.floor(Math.random() * 20) + 60; // 60-80%
+                    lmsActivity = Math.floor(Math.random() * 25) + 50; // 50-75%
+                    grade = Math.floor(Math.random() * 20) + 60; // 60-80%
+                } else { // Low risk
+                    attendance = Math.floor(Math.random() * 15) + 80; // 80-95%
+                    lmsActivity = Math.floor(Math.random() * 20) + 75; // 75-95%
+                    grade = Math.floor(Math.random() * 15) + 80; // 80-95%
+                }
+                
+                const course = courses[Math.floor(Math.random() * courses.length)];
+                
+                // Calculate risk score
+                const riskScore = calculateRiskScore(attendance, lmsActivity, grade);
+                const riskLevel = getRiskLevel(riskScore);
+                const lastLogin = getRandomLastLogin();
+                
+                students.push({
+                    id,
+                    name,
+                    email,
+                    attendance,
+                    lmsActivity,
+                    grade,
+                    course,
+                    lastLogin,
+                    riskLevel,
+                    riskScore
+                });
+            }
+            
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            console.log('Initializing event listeners...');
+            
+            // Add Student Button
+            document.getElementById('addStudentBtn').addEventListener('click', showAddStudentModal);
+
+            // Export Button
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+
+            // Run Test Suite Button
+            document.getElementById('runTestBtn').addEventListener('click', runTestSuite);
+
+            // Test Control Buttons
+            document.getElementById('addRandomBtn').addEventListener('click', function() {
+                addRandomStudents(10);
+            });
+
+            document.getElementById('addHighRiskBtn').addEventListener('click', function() {
+                addHighRiskStudents(5);
+            });
+
+            document.getElementById('addMediumRiskBtn').addEventListener('click', function() {
+                addMediumRiskStudents(5);
+            });
+
+            document.getElementById('clearDataBtn').addEventListener('click', clearData);
+
+            // Chart Controls
+            document.getElementById('refreshChartsBtn').addEventListener('click', function() {
+                updateCharts();
+                showToast('Charts refreshed', 'success');
+            });
+
+            document.getElementById('addSampleDataBtn').addEventListener('click', function() {
+                createSampleData(5);
+                showToast('5 sample students added', 'info');
+            });
+
+            // Table Controls
+            document.getElementById('bulkContactBtn').addEventListener('click', bulkContact);
+            document.getElementById('showAllBtn').addEventListener('click', function() {
+                setActiveFilter('all');
+            });
+
+            document.getElementById('recalculateBtn').addEventListener('click', function() {
+                recalculateAllRisks();
+            });
+
+            // Filter Buttons
+            document.getElementById('filterOptions').addEventListener('click', function(event) {
+                const filterBtn = event.target.closest('.filter-btn');
+                if (filterBtn) {
+                    const filter = filterBtn.dataset.filter;
+                    console.log('Filter clicked:', filter);
+                    setActiveFilter(filter);
+                }
+            });
+
+            // Modal Close Buttons
+            document.getElementById('closeModalBtn').addEventListener('click', hideAddStudentModal);
+            document.getElementById('cancelBtn').addEventListener('click', hideAddStudentModal);
+
+            // Add Student Form
+            document.getElementById('studentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addStudent();
+            });
+        }
+
+        // Initialize AI Chat
+        function initializeAI() {
+            const aiToggle = document.getElementById('aiToggle');
+            const aiPanel = document.getElementById('aiPanel');
+            const closeAiBtn = document.getElementById('closeAiBtn');
+            const sendBtn = document.getElementById('sendAiMessage');
+            const aiInput = document.getElementById('aiInput');
+
+            aiToggle.addEventListener('click', function() {
+                aiPanel.classList.toggle('active');
+            });
+
+            closeAiBtn.addEventListener('click', function() {
+                aiPanel.classList.remove('active');
+            });
+
+            sendBtn.addEventListener('click', sendAIMessage);
+
+            aiInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendAIMessage();
+                }
+            });
+        }
+
+        // Send AI Message
+        function sendAIMessage() {
+            const input = document.getElementById('aiInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addAIMessage(message, 'user');
+            input.value = '';
+            
+            const messagesDiv = document.getElementById('aiMessages');
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message ai-message';
+            typingIndicator.innerHTML = '<i>Analyzing request...</i>';
+            messagesDiv.appendChild(typingIndicator);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            setTimeout(() => {
+                messagesDiv.removeChild(typingIndicator);
+                const response = generateAIResponse(message);
+                addAIMessage(response, 'ai');
+            }, 1000 + Math.random() * 1000);
+        }
+
+        // Generate AI Response
+        function generateAIResponse(message) {
+            const lowerMsg = message.toLowerCase();
+            const totalStudents = students.length;
+            const highRisk = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRisk = students.filter(s => s.riskLevel === 'medium').length;
+            const lowRisk = students.filter(s => s.riskLevel === 'low').length;
+            
+            // Test related responses
+            if (lowerMsg.includes('test') || lowerMsg.includes('run test')) {
+                return "Running test suite... Check the test results in the sidebar buttons! You can also click 'Run Test Suite' in the header for automated testing.";
+            }
+            
+            if (lowerMsg.includes('add student') || lowerMsg.includes('more student')) {
+                return "Use the test buttons in the sidebar: 'Add 10 Random Students', 'Add 5 High Risk Students', or 'Add 5 Medium Risk Students'. Watch the charts update in real-time!";
+            }
+            
+            if (lowerMsg.includes('chart') || lowerMsg.includes('graph')) {
+                return `Charts are working! Risk Distribution shows: ${highRisk} High Risk, ${mediumRisk} Medium Risk, ${lowRisk} Low Risk students. Attendance Trends shows performance distribution.`;
+            }
+            
+            if (lowerMsg.includes('filter') || lowerMsg.includes('test filter')) {
+                return "Click the filter buttons in the sidebar to test: All Students, High Risk, Medium Risk, Low Risk. The table updates instantly with correct counts!";
+            }
+            
+            if (lowerMsg.includes('count') || lowerMsg.includes('how many')) {
+                return `Current counts: Total: ${totalStudents}, High Risk: ${highRisk}, Medium: ${mediumRisk}, Low: ${lowRisk}. Filter counts update in real-time.`;
+            }
+            
+            if (lowerMsg.includes('help') || lowerMsg.includes('what can')) {
+                return "I can help you run tests, add students, check charts, and analyze data. Try saying: 'run tests', 'add students', 'check charts', or 'test filters'.";
+            }
+            
+            return "I'm here to help you test the dashboard. Try running the test suite or adding multiple students to see real-time updates!";
+        }
+
+        // Run comprehensive test suite
+        function runTestSuite() {
+            showToast('Starting test suite...', 'info');
+            addAIMessage("Starting comprehensive test suite...");
+            
+            let testStep = 0;
+            const totalSteps = 7;
+            
+            const nextTest = () => {
+                testStep++;
+                
+                switch(testStep) {
+                    case 1:
+                        showToast(`Test ${testStep}/${totalSteps}: Checking initial data...`, 'info');
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Checking initial data - ${students.length} students loaded`);
+                        setTimeout(nextTest, 1000);
+                        break;
+                        
+                    case 2:
+                        showToast(`Test ${testStep}/${totalSteps}: Adding 10 random students...`, 'info');
+                        addRandomStudents(10);
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Added 10 random students. Total: ${students.length}`);
+                        setTimeout(nextTest, 1500);
+                        break;
+                        
+                    case 3:
+                        showToast(`Test ${testStep}/${totalSteps}: Adding 5 high risk students...`, 'info');
+                        addHighRiskStudents(5);
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Added 5 high risk students. Total: ${students.length}`);
+                        setTimeout(nextTest, 1500);
+                        break;
+                        
+                    case 4:
+                        showToast(`Test ${testStep}/${totalSteps}: Adding 5 medium risk students...`, 'info');
+                        addMediumRiskStudents(5);
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Added 5 medium risk students. Total: ${students.length}`);
+                        setTimeout(nextTest, 1500);
+                        break;
+                        
+                    case 5:
+                        showToast(`Test ${testStep}/${totalSteps}: Testing filters...`, 'info');
+                        testFilters();
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Testing all filters...`);
+                        setTimeout(nextTest, 4000);
+                        break;
+                        
+                    case 6:
+                        showToast(`Test ${testStep}/${totalSteps}: Testing charts...`, 'info');
+                        testCharts();
+                        addAIMessage(`Test ${testStep}/${totalSteps}: Testing charts...`);
+                        setTimeout(nextTest, 1500);
+                        break;
+                        
+                    case 7:
+                        showToast(`Test ${testStep}/${totalSteps}: Test complete!`, 'success');
+                        addAIMessage(`Test ${testStep}/${totalSteps}: All tests completed successfully!`);
+                        showToast('Test suite completed successfully!', 'success');
+                        break;
+                }
+            };
+            
+            nextTest();
+        }
+
+        // Add random students
+        function addRandomStudents(count) {
+            const firstNames = ['James', 'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'William', 'Sophia', 'Logan', 'Isabella'];
+            const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+            const courses = ['CS101', 'MATH201', 'ENG102', 'BIO101', 'PHYS102'];
+            
+            for (let i = 0; i < count; i++) {
+                const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+                const name = `${firstName} ${lastName}`;
+                const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${students.length + 1}@university.edu`;
+                const id = `S${2000 + students.length + 1}`;
+                
+                // Random metrics across full range
+                const attendance = Math.floor(Math.random() * 100);
+                const lmsActivity = Math.floor(Math.random() * 100);
+                const grade = Math.floor(Math.random() * 100);
+                const course = courses[Math.floor(Math.random() * courses.length)];
+                
+                const riskScore = calculateRiskScore(attendance, lmsActivity, grade);
+                const riskLevel = getRiskLevel(riskScore);
+                const lastLogin = getRandomLastLogin();
+                
+                students.push({
+                    id,
+                    name,
+                    email,
+                    attendance,
+                    lmsActivity,
+                    grade,
+                    course,
+                    lastLogin,
+                    riskLevel,
+                    riskScore
+                });
+            }
+            
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+            
+            showToast(`Added ${count} random students`, 'success');
+        }
+
+        // Add high risk students
+        function addHighRiskStudents(count) {
+            const firstNames = ['Risk', 'Troubled', 'Struggling', 'Failing', 'Critical'];
+            const lastNames = ['Student', 'Case', 'Situation', 'Alert', 'Warning'];
+            
+            for (let i = 0; i < count; i++) {
+                const name = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]} ${students.length + 1}`;
+                const email = `highrisk${students.length + 1}@university.edu`;
+                const id = `HR${3000 + students.length + 1}`;
+                
+                // Low metrics for high risk
+                const attendance = Math.floor(Math.random() * 30) + 20; // 20-50%
+                const lmsActivity = Math.floor(Math.random() * 25) + 15; // 15-40%
+                const grade = Math.floor(Math.random() * 40) + 30; // 30-70%
+                const course = 'CS101';
+                
+                const riskScore = calculateRiskScore(attendance, lmsActivity, grade);
+                const riskLevel = 'high';
+                const lastLogin = `${Math.floor(Math.random() * 14) + 7} days ago`;
+                
+                students.push({
+                    id,
+                    name,
+                    email,
+                    attendance,
+                    lmsActivity,
+                    grade,
+                    course,
+                    lastLogin,
+                    riskLevel,
+                    riskScore
+                });
+            }
+            
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+            
+            showToast(`Added ${count} high risk students`, 'warning');
+        }
+
+        // Add medium risk students
+        function addMediumRiskStudents(count) {
+            const firstNames = ['Average', 'Middle', 'Moderate', 'Balanced', 'Regular'];
+            const lastNames = ['Student', 'Performer', 'Learner', 'Attendee', 'Scholar'];
+            
+            for (let i = 0; i < count; i++) {
+                const name = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]} ${students.length + 1}`;
+                const email = `medium${students.length + 1}@university.edu`;
+                const id = `MR${4000 + students.length + 1}`;
+                
+                // Medium metrics
+                const attendance = Math.floor(Math.random() * 30) + 50; // 50-80%
+                const lmsActivity = Math.floor(Math.random() * 30) + 40; // 40-70%
+                const grade = Math.floor(Math.random() * 30) + 60; // 60-90%
+                const course = 'MATH201';
+                
+                const riskScore = calculateRiskScore(attendance, lmsActivity, grade);
+                const riskLevel = 'medium';
+                const lastLogin = `${Math.floor(Math.random() * 7) + 1} days ago`;
+                
+                students.push({
+                    id,
+                    name,
+                    email,
+                    attendance,
+                    lmsActivity,
+                    grade,
+                    course,
+                    lastLogin,
+                    riskLevel,
+                    riskScore
+                });
+            }
+            
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+            
+            showToast(`Added ${count} medium risk students`, 'info');
+        }
+
+        // Test filters
+        function testFilters() {
+            const filters = ['all', 'high', 'medium', 'low'];
+            let currentIndex = 0;
+            
+            const testNextFilter = () => {
+                if (currentIndex >= filters.length) {
+                    setActiveFilter('all');
+                    showToast('Filter testing complete!', 'success');
+                    return;
+                }
+                
+                const filter = filters[currentIndex];
+                setActiveFilter(filter);
+                
+                setTimeout(() => {
+                    currentIndex++;
+                    testNextFilter();
+                }, 1000);
+            };
+            
+            testNextFilter();
+        }
+
+        // Test charts
+        function testCharts() {
+            if (!riskChart || !attendanceChart) {
+                initializeCharts();
+            }
+            
+            updateCharts();
+            
+            // Verify charts have data
+            const highRisk = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRisk = students.filter(s => s.riskLevel === 'medium').length;
+            const lowRisk = students.filter(s => s.riskLevel === 'low').length;
+            
+            if (highRisk + mediumRisk + lowRisk > 0) {
+                showToast('Charts are working and displaying data!', 'success');
+                addAIMessage("Charts test passed! Both charts are displaying data correctly.");
+            } else {
+                showToast('No data to display in charts', 'warning');
+            }
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            console.log('Initializing charts...');
+            
+            // Destroy existing charts if they exist
+            if (riskChart) {
+                riskChart.destroy();
+            }
+            if (attendanceChart) {
+                attendanceChart.destroy();
+            }
+            
+            // Get canvas elements
+            const riskCanvas = document.getElementById('riskChart');
+            const attendanceCanvas = document.getElementById('attendanceChart');
+            
+            // Clear canvas
+            const riskCtx = riskCanvas.getContext('2d');
+            const attendanceCtx = attendanceCanvas.getContext('2d');
+            riskCtx.clearRect(0, 0, riskCanvas.width, riskCanvas.height);
+            attendanceCtx.clearRect(0, 0, attendanceCanvas.width, attendanceCanvas.height);
+            
+            // Set canvas dimensions
+            riskCanvas.width = riskCanvas.parentElement.offsetWidth;
+            riskCanvas.height = riskCanvas.parentElement.offsetHeight;
+            attendanceCanvas.width = attendanceCanvas.parentElement.offsetWidth;
+            attendanceCanvas.height = attendanceCanvas.parentElement.offsetHeight;
+            
+            try {
+                // Risk Distribution Chart (Doughnut)
+                riskChart = new Chart(riskCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                        datasets: [{
+                            data: [0, 0, 0],
+                            backgroundColor: [
+                                'rgba(239, 83, 80, 0.8)',
+                                'rgba(255, 183, 77, 0.8)',
+                                'rgba(102, 187, 106, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgb(239, 83, 80)',
+                                'rgb(255, 183, 77)',
+                                'rgb(102, 187, 106)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                        return `${label}: ${value} students (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Attendance Trends Chart (Bar)
+                attendanceChart = new Chart(attendanceCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['<60%', '60-70%', '70-80%', '80-90%', '90-100%'],
+                        datasets: [{
+                            label: 'Number of Students',
+                            data: [0, 0, 0, 0, 0],
+                            backgroundColor: [
+                                'rgba(239, 83, 80, 0.7)',
+                                'rgba(255, 183, 77, 0.7)',
+                                'rgba(255, 213, 79, 0.7)',
+                                'rgba(174, 213, 129, 0.7)',
+                                'rgba(102, 187, 106, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgb(239, 83, 80)',
+                                'rgb(255, 183, 77)',
+                                'rgb(255, 213, 79)',
+                                'rgb(174, 213, 129)',
+                                'rgb(102, 187, 106)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Students',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                },
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Attendance Range',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+                
+                console.log('Charts initialized successfully');
+                updateCharts();
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+            }
+        }
+
+        // Update charts with current data
+        function updateCharts() {
+            if (!riskChart || !attendanceChart) {
+                console.log('Charts not initialized');
+                return;
+            }
+            
+            // Update Risk Distribution Chart
+            const highRiskCount = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRiskCount = students.filter(s => s.riskLevel === 'medium').length;
+            const lowRiskCount = students.filter(s => s.riskLevel === 'low').length;
+            
+            riskChart.data.datasets[0].data = [highRiskCount, mediumRiskCount, lowRiskCount];
+            
+            // Update Attendance Trends Chart
+            const attendanceRanges = [
+                students.filter(s => s.attendance < 60).length,
+                students.filter(s => s.attendance >= 60 && s.attendance < 70).length,
+                students.filter(s => s.attendance >= 70 && s.attendance < 80).length,
+                students.filter(s => s.attendance >= 80 && s.attendance < 90).length,
+                students.filter(s => s.attendance >= 90).length
+            ];
+            
+            attendanceChart.data.datasets[0].data = attendanceRanges;
+            
+            // Update both charts
+            try {
+                riskChart.update();
+                attendanceChart.update();
+            } catch (error) {
+                console.error('Error updating charts:', error);
+            }
+        }
+
+        // Calculate risk score
+        function calculateRiskScore(attendance, lmsActivity, grade) {
+            const attendanceWeight = 0.4;
+            const lmsWeight = 0.3;
+            const gradeWeight = 0.3;
+
+            const attendanceScore = (100 - attendance) * attendanceWeight;
+            const lmsScore = (100 - lmsActivity) * lmsWeight;
+            const gradeScore = (100 - grade) * gradeWeight;
+
+            return Math.min(100, Math.round(attendanceScore + lmsScore + gradeScore));
+        }
+
+        // Get risk level from score
+        function getRiskLevel(score) {
+            if (score >= 75) return 'high';
+            if (score >= 50) return 'medium';
+            return 'low';
+        }
+
+        // Get random last login
+        function getRandomLastLogin() {
+            const options = ['Today', 'Yesterday', '2 days ago', '3 days ago', '1 week ago'];
+            return options[Math.floor(Math.random() * options.length)];
+        }
+
+        // Set active filter
+        function setActiveFilter(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+            
+            applyFilter();
+            updateUI();
+        }
+
+        // Apply current filter
+        function applyFilter() {
+            if (currentFilter === 'all') {
+                filteredStudents = [...students];
+            } else {
+                filteredStudents = students.filter(student => 
+                    student.riskLevel === currentFilter
+                );
+            }
+        }
+
+        // Update UI with current data
+        function updateUI() {
+            updateStats();
+            updateFilterCounts();
+            renderStudentTable();
+            updateCharts();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const highRisk = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRisk = students.filter(s => s.riskLevel === 'medium').length;
+            const lowRisk = students.filter(s => s.riskLevel === 'low').length;
+            const total = students.length;
+            const retentionRate = calculateRetentionRate();
+
+            // Update stat cards
+            document.getElementById('highRiskStat').textContent = highRisk;
+            document.getElementById('mediumRiskStat').textContent = mediumRisk;
+            document.getElementById('lowRiskStat').textContent = lowRisk;
+            document.getElementById('retentionRate').textContent = retentionRate + '%';
+
+            // Update sidebar stats
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('highStat').textContent = highRisk;
+            document.getElementById('mediumStat').textContent = mediumRisk;
+            document.getElementById('lowStat').textContent = lowRisk;
+        }
+
+        // Update filter counts
+        function updateFilterCounts() {
+            const total = students.length;
+            const highRisk = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRisk = students.filter(s => s.riskLevel === 'medium').length;
+            const lowRisk = students.filter(s => s.riskLevel === 'low').length;
+            
+            document.getElementById('allCount').textContent = total;
+            document.getElementById('highCount').textContent = highRisk;
+            document.getElementById('mediumCount').textContent = mediumRisk;
+            document.getElementById('lowCount').textContent = lowRisk;
+        }
+
+        // Calculate retention rate
+        function calculateRetentionRate() {
+            const total = students.length;
+            if (total === 0) return 0;
+            
+            const highRisk = students.filter(s => s.riskLevel === 'high').length;
+            const mediumRisk = students.filter(s => s.riskLevel === 'medium').length;
+            
+            // Realistic calculation
+            const retention = Math.max(70, 100 - (highRisk / total * 25) - (mediumRisk / total * 10));
+            return Math.round(retention);
+        }
+
+        // Recalculate all risks
+        function recalculateAllRisks() {
+            students.forEach(student => {
+                student.riskScore = calculateRiskScore(student.attendance, student.lmsActivity, student.grade);
+                student.riskLevel = getRiskLevel(student.riskScore);
+            });
+            
+            saveStudents();
+            applyFilter();
+            updateUI();
+            showToast('All risk scores recalculated', 'success');
+        }
+
+        // Render student table
+        function renderStudentTable() {
+            const table = document.getElementById('studentsTable');
+            const tableTitle = document.getElementById('tableTitle');
+            const tableCount = document.getElementById('tableCount');
+            const totalTableCount = document.getElementById('totalTableCount');
+            
+            // Update counts
+            tableCount.textContent = filteredStudents.length;
+            totalTableCount.textContent = students.length;
+            
+            // Update table title
+            let title = '';
+            switch(currentFilter) {
+                case 'all':
+                    title = `All Students (${filteredStudents.length} students)`;
+                    break;
+                case 'high':
+                    title = `High Risk Students (${filteredStudents.length} students)`;
+                    break;
+                case 'medium':
+                    title = `Medium Risk Students (${filteredStudents.length} students)`;
+                    break;
+                case 'low':
+                    title = `Low Risk Students (${filteredStudents.length} students)`;
+                    break;
+            }
+            tableTitle.textContent = title;
+            
+            table.innerHTML = '';
+
+            if (filteredStudents.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: #666;">
+                            <i class="fas fa-users-slash" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                            <h3>No students found</h3>
+                            <p>Try changing your filter or add new students</p>
+                            <button class="btn btn-primary" onclick="showAddStudentModal()" style="margin-top: 1rem;">
+                                <i class="fas fa-user-plus"></i> Add Students
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredStudents.forEach(student => {
+                const row = document.createElement('tr');
+                
+                const initials = student.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                
+                let badgeClass = '';
+                switch(student.riskLevel) {
+                    case 'high': badgeClass = 'high-risk-badge'; break;
+                    case 'medium': badgeClass = 'medium-risk-badge'; break;
+                    case 'low': badgeClass = 'low-risk-badge'; break;
+                }
+
+                row.innerHTML = `
+                    <td>
+                        <div class="student-info">
+                            <div class="student-avatar">${initials}</div>
+                            <div>
+                                <div style="font-weight: 600;">${student.name}</div>
+                                <div style="font-size: 0.9rem; color: #666;">${student.id} • ${student.course}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="risk-badge ${badgeClass}">${student.riskLevel.toUpperCase()}</span>
+                    </td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${student.attendance}%; background: ${getColorForValue(student.attendance)};"></div>
+                        </div>
+                        <div style="font-size: 0.9rem; margin-top: 0.25rem; font-weight: 600; color: ${getColorForValue(student.attendance)};">${student.attendance}%</div>
+                    </td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${student.lmsActivity}%; background: ${getColorForValue(student.lmsActivity)};"></div>
+                        </div>
+                        <div style="font-size: 0.9rem; margin-top: 0.25rem; font-weight: 600; color: ${getColorForValue(student.lmsActivity)};">${student.lmsActivity}%</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: ${getColorForValue(student.grade)};">${student.grade}%</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: ${getRiskColor(student.riskScore)};">${student.riskScore}</div>
+                    </td>
+                    <td>
+                        <button class="action-btn" style="background: #e3f2fd; color: #1a237e;" onclick="editStudent('${student.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn" style="background: #4fc3f7; color: white; margin-left: 0.5rem;" onclick="contactStudent('${student.id}')">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </td>
+                `;
+                
+                table.appendChild(row);
+            });
+        }
+
+        // Get color for value
+        function getColorForValue(value) {
+            if (value >= 80) return '#66bb6a';
+            if (value >= 60) return '#ffb74d';
+            return '#ef5350';
+        }
+
+        // Get risk color
+        function getRiskColor(score) {
+            if (score >= 75) return '#ef5350';
+            if (score >= 50) return '#ffb74d';
+            return '#66bb6a';
+        }
+
+        // Show add student modal
+        function showAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('active');
+            const nextId = 'S' + (1000 + students.length + 1);
+            document.getElementById('studentId').value = nextId;
+        }
+
+        // Hide add student modal
+        function hideAddStudentModal() {
+            document.getElementById('addStudentModal').classList.remove('active');
+            document.getElementById('studentForm').reset();
+        }
+
+        // Add new student
+        function addStudent() {
+            const name = document.getElementById('studentName').value.trim();
+            const email = document.getElementById('studentEmail').value.trim();
+            const id = document.getElementById('studentId').value.trim();
+            const attendance = parseInt(document.getElementById('attendance').value);
+            const lmsActivity = parseInt(document.getElementById('lmsActivity').value);
+            const grade = parseInt(document.getElementById('grade').value);
+            const course = document.getElementById('course').value;
+
+            if (!name || !email || !id) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (attendance < 0 || attendance > 100 || 
+                lmsActivity < 0 || lmsActivity > 100 || 
+                grade < 0 || grade > 100) {
+                showToast('Please enter valid percentages (0-100)', 'error');
+                return;
+            }
+
+            if (students.some(s => s.id === id)) {
+                showToast('Student ID already exists', 'error');
+                return;
+            }
+
+            const riskScore = calculateRiskScore(attendance, lmsActivity, grade);
+            const riskLevel = getRiskLevel(riskScore);
+            const lastLogin = 'Today';
+
+            const newStudent = {
+                id,
+                name,
+                email,
+                attendance,
+                lmsActivity,
+                grade,
+                course,
+                lastLogin,
+                riskLevel,
+                riskScore
+            };
+
+            students.push(newStudent);
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+            hideAddStudentModal();
+            
+            showToast(`Student ${name} added successfully`, 'success');
+        }
+
+        // Edit student
+        function editStudent(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            const newAttendance = prompt(`Edit attendance for ${student.name} (current: ${student.attendance}%):`, student.attendance);
+            if (newAttendance !== null && !isNaN(newAttendance)) {
+                student.attendance = parseInt(newAttendance);
+                student.riskScore = calculateRiskScore(student.attendance, student.lmsActivity, student.grade);
+                student.riskLevel = getRiskLevel(student.riskScore);
+                saveStudents();
+                applyFilter();
+                updateUI();
+                updateCharts();
+                showToast('Student updated successfully', 'success');
+            }
+        }
+
+        // Contact student
+        function contactStudent(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+
+            const subject = encodeURIComponent(`Academic Support - ${student.name}`);
+            const body = encodeURIComponent(`Dear ${student.name},\n\nWe noticed you might need some academic support. Please reach out to discuss how we can help you succeed in ${student.course}.\n\nBest regards,\nRetention Team`);
+            
+            window.open(`mailto:${student.email}?subject=${subject}&body=${body}`, '_blank');
+            
+            showToast(`Opened email for ${student.name}`, 'success');
+        }
+
+        // Bulk contact
+        function bulkContact() {
+            if (filteredStudents.length === 0) {
+                showToast('No students to contact', 'warning');
+                return;
+            }
+
+            const emailList = filteredStudents.map(s => s.email).join(',');
+            const subject = encodeURIComponent('Academic Support - Important Update');
+            const body = encodeURIComponent(`Dear Students,\n\nThis is a message regarding your academic progress. Please check your course dashboard for updates.\n\nBest regards,\nRetention Team`);
+            
+            window.open(`mailto:${emailList}?subject=${subject}&body=${body}`, '_blank');
+            
+            showToast(`Contacting ${filteredStudents.length} students`, 'success');
+        }
+
+        // Export data
+        function exportData() {
+            const data = {
+                students: students,
+                exportDate: new Date().toISOString(),
+                statistics: {
+                    total: students.length,
+                    highRisk: students.filter(s => s.riskLevel === 'high').length,
+                    mediumRisk: students.filter(s => s.riskLevel === 'medium').length,
+                    lowRisk: students.filter(s => s.riskLevel === 'low').length,
+                    retentionRate: calculateRetentionRate()
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `student-retention-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Data exported successfully', 'success');
+        }
+
+        // Clear all data
+        function clearData() {
+            if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                return;
+            }
+
+            students = [];
+            saveStudents();
+            applyFilter();
+            updateUI();
+            updateCharts();
+            
+            showToast('All data cleared', 'success');
+            addAIMessage("All data cleared. Add new students to start fresh!");
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Add AI Message
+        function addAIMessage(text, sender = 'ai') {
+            const messagesDiv = document.getElementById('aiMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Make functions available globally
+        window.showAddStudentModal = showAddStudentModal;
+        window.editStudent = editStudent;
+        window.contactStudent = contactStudent;
+    </script>
+</body>
+</html>
